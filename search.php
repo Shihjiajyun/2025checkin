@@ -53,6 +53,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // 获取参加者信息（不报到，用于扫描确认）
+    if ($action === 'get_participant') {
+        $participantId = intval($_POST['participant_id'] ?? 0);
+
+        if ($participantId <= 0) {
+            echo json_encode(['success' => false, 'message' => '無效的參加者ID']);
+            exit;
+        }
+
+        try {
+            $sql = "SELECT id, name, phone, email, identity, remark, checked_in, check_in_time
+                    FROM participants
+                    WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['id' => $participantId]);
+            $participant = $stmt->fetch();
+
+            if (!$participant) {
+                echo json_encode(['success' => false, 'message' => '參加者不存在']);
+                exit;
+            }
+
+            echo json_encode(['success' => true, 'data' => $participant]);
+        } catch (PDOException $e) {
+            echo json_encode(['success' => false, 'message' => '查詢失敗：' . $e->getMessage()]);
+        }
+        exit;
+    }
+
     // 执行报到
     if ($action === 'checkin') {
         $participantId = intval($_POST['participant_id'] ?? 0);
@@ -205,6 +234,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #333;
         }
 
+        /* 汉堡菜单 */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: #667eea;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .hamburger:hover {
+            background: #e0e0e0;
+        }
+
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+
         main {
             flex: 1;
             display: flex;
@@ -316,13 +381,191 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #ffc107;
             font-weight: bold;
         }
+
+        /* RWD - 平板和小屏幕 */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 20px;
+            }
+
+            .logo {
+                height: 60px;
+            }
+
+            .hamburger {
+                display: flex;
+            }
+
+            .header-right {
+                position: fixed;
+                top: 0;
+                right: -100%;
+                width: 280px;
+                height: 100vh;
+                background: white;
+                box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+                flex-direction: column;
+                padding: 20px;
+                transition: right 0.3s ease;
+                z-index: 999;
+                overflow-y: auto;
+            }
+
+            .header-right.active {
+                right: 0;
+            }
+
+            .header-buttons {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+                margin-top: 20px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .user-info {
+                width: 100%;
+                justify-content: center;
+            }
+
+            main {
+                padding: 20px;
+            }
+
+            .search-container {
+                padding: 30px 20px;
+            }
+
+            .page-title {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+
+            .search-form {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .search-input {
+                padding: 12px 15px;
+                font-size: 15px;
+            }
+
+            .search-button {
+                padding: 12px 30px;
+                width: 100%;
+            }
+
+            .placeholder-text {
+                padding: 30px 15px;
+                font-size: 14px;
+            }
+        }
+
+        /* RWD - 超小屏幕（手机竖屏） */
+        @media (max-width: 480px) {
+            header {
+                padding: 10px 15px;
+            }
+
+            .logo {
+                height: 50px;
+            }
+
+            .user-info {
+                padding: 8px 15px;
+                font-size: 14px;
+            }
+
+            .user-name {
+                font-size: 14px;
+            }
+
+            .user-role {
+                font-size: 10px;
+            }
+
+            .btn {
+                padding: 8px 15px;
+                font-size: 13px;
+            }
+
+            main {
+                padding: 15px;
+            }
+
+            .search-container {
+                padding: 20px 15px;
+                border-radius: 15px;
+            }
+
+            .page-title {
+                font-size: 20px;
+                margin-bottom: 15px;
+            }
+
+            .search-form {
+                gap: 10px;
+                margin-bottom: 20px;
+            }
+
+            .search-input {
+                padding: 10px 15px;
+                font-size: 14px;
+            }
+
+            .search-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .placeholder-text {
+                padding: 20px 10px;
+                font-size: 13px;
+            }
+
+            /* SweetAlert2 在小屏幕的优化 */
+            .participant-info {
+                font-size: 14px;
+            }
+
+            .info-row {
+                flex-direction: column;
+                padding: 10px 0;
+                gap: 5px;
+            }
+
+            .info-label {
+                min-width: auto;
+                font-size: 13px;
+            }
+
+            .info-value {
+                font-size: 14px;
+                padding-left: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <header>
         <img src="./src/logo.png" alt="活動Logo" class="logo">
 
-        <div class="header-right">
+        <div class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <div class="header-right" id="headerRight">
             <div class="user-info">
                 <span class="user-name"><?= htmlspecialchars($name) ?></span>
                 <span class="user-role"><?= $isAdmin ? '管理員' : '工作人員' ?></span>
@@ -360,6 +603,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script>
+        // 汉堡菜单功能
+        const hamburger = document.getElementById('hamburger');
+        const headerRight = document.getElementById('headerRight');
+
+        hamburger.addEventListener('click', function() {
+            this.classList.toggle('active');
+            headerRight.classList.toggle('active');
+        });
+
+        // 点击菜单项后关闭菜单
+        document.querySelectorAll('.header-right .btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                hamburger.classList.remove('active');
+                headerRight.classList.remove('active');
+            });
+        });
+
+        // 点击外部关闭菜单
+        document.addEventListener('click', function(e) {
+            if (!hamburger.contains(e.target) && !headerRight.contains(e.target)) {
+                hamburger.classList.remove('active');
+                headerRight.classList.remove('active');
+            }
+        });
+
+        // 搜索功能
         const searchForm = document.getElementById('searchForm');
         const searchInput = document.getElementById('searchInput');
         const searchBtn = document.getElementById('searchBtn');

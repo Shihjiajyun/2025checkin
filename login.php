@@ -58,12 +58,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     body {
         font-family: "Microsoft YaHei", "微软雅黑", Arial, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         min-height: 100vh;
         display: flex;
+        flex-direction: column;
         justify-content: center;
         align-items: center;
         padding: 20px;
+    }
+
+    .logo-wrapper {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .logo {
+        max-width: 300px;
+        width: 100%;
+        height: auto;
     }
 
     .login-container {
@@ -78,11 +89,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .login-header {
         text-align: center;
         margin-bottom: 40px;
-    }
-
-    .logo {
-        max-width: 300px;
-        margin-bottom: 20px;
     }
 
     .login-title {
@@ -155,13 +161,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .login-button:active {
         transform: translateY(0);
     }
+
+    /* RWD */
+    @media (max-width: 480px) {
+        .logo {
+            max-width: 200px;
+        }
+
+        .login-container {
+            padding: 30px 25px;
+        }
+
+        .login-title {
+            font-size: 24px;
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+        }
+    }
     </style>
 </head>
 
 <body>
+    <div class="logo-wrapper">
+        <img src="./src/logo.png" alt="活動Logo" class="logo">
+    </div>
+
     <div class="login-container">
         <div class="login-header">
-            <img src="./src/logo.png" alt="活動Logo" class="logo">
             <h1 class="login-title">活動簽到系統</h1>
             <p class="login-subtitle">靈感日日村 × 拉麵社聯合年會</p>
         </div>
