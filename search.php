@@ -20,25 +20,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $pdo = getDbConnection();
 
-    // 搜索参加者
+    // 搜索参加者（電話末三碼）
     if ($action === 'search') {
         $keyword = trim($_POST['keyword'] ?? '');
 
         if (empty($keyword)) {
-            echo json_encode(['success' => false, 'message' => '請輸入姓名或電話']);
+            echo json_encode(['success' => false, 'message' => '請輸入電話號碼末三碼']);
+            exit;
+        }
+
+        // 驗證輸入是否為數字
+        if (!ctype_digit($keyword)) {
+            echo json_encode(['success' => false, 'message' => '請輸入有效的數字']);
             exit;
         }
 
         try {
-            // 支持姓名或电话搜索（模糊匹配）
+            // 搜索電話號碼末三碼
             $sql = "SELECT id, name, phone, email, identity, remark, checked_in, check_in_time
                     FROM participants
-                    WHERE name LIKE ? OR phone LIKE ?
+                    WHERE phone LIKE ?
                     LIMIT 10";
 
             $stmt = $pdo->prepare($sql);
-            $likeKeyword = "%{$keyword}%";
-            $stmt->execute([$likeKeyword, $likeKeyword]);
+            $likeKeyword = "%{$keyword}";
+            $stmt->execute([$likeKeyword]);
             $results = $stmt->fetchAll();
 
             if (empty($results)) {
@@ -583,21 +589,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <main>
         <div class="search-container">
-            <h1 class="page-title">參加者查詢</h1>
+            <h1 class="page-title">電話末三碼查詢</h1>
 
             <form class="search-form" id="searchForm">
                 <input
                     type="text"
                     id="searchInput"
                     class="search-input"
-                    placeholder="請輸入姓名或電話號碼"
+                    placeholder="請輸入電話號碼末三碼"
                     required
+                    maxlength="3"
+                    pattern="[0-9]*"
+                    inputmode="numeric"
                 >
                 <button type="submit" class="search-button" id="searchBtn">查詢</button>
             </form>
 
             <div class="placeholder-text">
-                請輸入參加者的姓名或電話號碼進行查詢
+                請輸入參加者電話號碼的末三碼進行查詢
             </div>
         </div>
     </main>
@@ -642,7 +651,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Swal.fire({
                     icon: 'warning',
                     title: '請輸入查詢關鍵字',
-                    text: '請輸入姓名或電話號碼'
+                    text: '請輸入電話號碼末三碼'
+                });
+                return;
+            }
+
+            // 驗證是否為數字
+            if (!/^\d+$/.test(keyword)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '格式錯誤',
+                    text: '請輸入有效的數字'
                 });
                 return;
             }
@@ -704,19 +723,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         function showParticipantList(participants) {
             const options = {};
             participants.forEach(p => {
-                const status = p.checked_in ? '✓ 已報到' : '未報到';
-                options[p.id] = `${p.name} - ${p.phone || '無電話'} (${status})`;
+                const status = p.checked_in ? '（已報到）' : '';
+                options[p.id] = `${p.name}${status}`;
             });
 
             Swal.fire({
                 title: '找到多位參加者',
-                text: '請選擇要查看的參加者',
+                text: '請詢問貴姓後選擇',
                 input: 'select',
                 inputOptions: options,
                 inputPlaceholder: '選擇參加者',
                 showCancelButton: true,
                 cancelButtonText: '取消',
-                confirmButtonText: '查看',
+                confirmButtonText: '選擇此人',
                 confirmButtonColor: '#667eea'
             }).then((result) => {
                 if (result.isConfirmed && result.value) {

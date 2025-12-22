@@ -226,8 +226,8 @@ $checkedInCount = $checkedInResult['checked_in'];
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
 
-        /* QR Code 扫描容器 */
-        .scanner-container {
+        /* 電話末三碼搜尋容器 */
+        .search-container {
             background: white;
             border-radius: 20px;
             padding: 40px;
@@ -237,7 +237,7 @@ $checkedInCount = $checkedInResult['checked_in'];
             margin-top: 30px;
         }
 
-        .scanner-title {
+        .search-title {
             font-size: 28px;
             font-weight: bold;
             color: #333;
@@ -245,60 +245,55 @@ $checkedInCount = $checkedInResult['checked_in'];
             text-align: center;
         }
 
-        #qr-reader {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            border: 2px solid #667eea;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-
-        #qr-reader__dashboard_section_csr {
-            display: none !important;
-        }
-
-        .scanner-status {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 16px;
-            color: #666;
-        }
-
-        .scanner-controls {
+        .search-form {
             display: flex;
-            justify-content: center;
             gap: 15px;
-            margin-top: 20px;
+            margin-bottom: 20px;
         }
 
-        .btn-scanner {
-            padding: 12px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            border: 2px solid #667eea;
-            background: white;
-            color: #667eea;
-            cursor: pointer;
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-button {
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
             transition: all 0.3s;
         }
 
-        .btn-scanner:hover {
-            background: #667eea;
-            color: white;
+        .search-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
-        .btn-scanner.stop {
-            border-color: #dc3545;
-            color: #dc3545;
+        .search-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .btn-scanner.stop:hover {
-            background: #dc3545;
-            color: white;
+        .search-hint {
+            text-align: center;
+            color: #999;
+            font-size: 14px;
         }
 
         /* RWD - 平板和小屏幕 */
@@ -391,28 +386,30 @@ $checkedInCount = $checkedInResult['checked_in'];
                 grid-column: 1;
             }
 
-            .scanner-container {
+            .search-container {
                 padding: 20px;
                 margin-top: 20px;
             }
 
-            .scanner-title {
+            .search-title {
                 font-size: 20px;
                 margin-bottom: 15px;
             }
 
-            #qr-reader {
-                max-width: 100%;
-            }
-
-            .scanner-controls {
+            .search-form {
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
             }
 
-            .btn-scanner {
+            .search-input {
+                padding: 12px 15px;
+                font-size: 16px;
+            }
+
+            .search-button {
+                padding: 12px 30px;
+                font-size: 16px;
                 width: 100%;
-                padding: 12px 20px;
             }
         }
 
@@ -478,25 +475,33 @@ $checkedInCount = $checkedInResult['checked_in'];
                 font-size: 20px;
             }
 
-            .scanner-container {
+            .search-container {
                 padding: 15px;
                 margin-top: 15px;
                 border-radius: 15px;
             }
 
-            .scanner-title {
+            .search-title {
                 font-size: 18px;
                 margin-bottom: 12px;
             }
 
-            .scanner-status {
-                font-size: 14px;
-                margin-top: 15px;
+            .search-form {
+                gap: 10px;
             }
 
-            .btn-scanner {
+            .search-input {
                 padding: 10px 15px;
                 font-size: 14px;
+            }
+
+            .search-button {
+                padding: 10px 20px;
+                font-size: 14px;
+            }
+
+            .search-hint {
+                font-size: 12px;
             }
         }
     </style>
@@ -549,20 +554,26 @@ $checkedInCount = $checkedInResult['checked_in'];
             </div>
         </div>
 
-        <!-- QR Code 扫描容器 -->
-        <div class="scanner-container">
-            <h2 class="scanner-title">QR Code 掃描報到</h2>
-            <div id="qr-reader"></div>
-            <div class="scanner-status" id="scanner-status">準備就緒，請掃描 QR Code</div>
-            <div class="scanner-controls">
-                <button class="btn-scanner" id="start-scan" onclick="startScanning()">開始掃描</button>
-                <button class="btn-scanner stop" id="stop-scan" onclick="stopScanning()" style="display: none;">停止掃描</button>
-            </div>
+        <!-- 電話末三碼搜尋容器 -->
+        <div class="search-container">
+            <h2 class="search-title">電話末三碼查詢</h2>
+            <form class="search-form" id="searchForm">
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="請輸入電話號碼末三碼"
+                    required
+                    maxlength="3"
+                    pattern="[0-9]*"
+                    inputmode="numeric"
+                    autocomplete="off"
+                >
+                <button type="submit" class="search-button" id="searchBtn">查詢</button>
+            </form>
+            <div class="search-hint">請輸入參加者電話號碼的末三碼進行查詢</div>
         </div>
     </main>
-
-    <!-- html5-qrcode 库 -->
-    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
     <script>
         // 汉堡菜单功能
@@ -590,104 +601,41 @@ $checkedInCount = $checkedInResult['checked_in'];
             }
         });
 
-        // QR Code 扫描功能
-        let html5QrCode = null;
-        let isScanning = false;
+        // 電話末三碼搜尋功能
+        const searchForm = document.getElementById('searchForm');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
 
-        function startScanning() {
-            if (isScanning) return;
+        // 搜索表单提交
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
 
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 },
-                aspectRatio: 1.0
-            };
-
-            html5QrCode = new Html5Qrcode("qr-reader");
-
-            html5QrCode.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                onScanFailure
-            ).then(() => {
-                isScanning = true;
-                document.getElementById('start-scan').style.display = 'none';
-                document.getElementById('stop-scan').style.display = 'inline-block';
-                updateStatus('掃描中...', '#667eea');
-            }).catch(err => {
-                console.error('無法啟動掃描器:', err);
-                Swal.fire({
-                    icon: 'error',
-                    title: '啟動失敗',
-                    text: '無法啟動相機，請檢查權限設置'
-                });
-            });
-        }
-
-        function stopScanning() {
-            if (!isScanning || !html5QrCode) return;
-
-            html5QrCode.stop().then(() => {
-                isScanning = false;
-                document.getElementById('start-scan').style.display = 'inline-block';
-                document.getElementById('stop-scan').style.display = 'none';
-                updateStatus('掃描已停止', '#999');
-            }).catch(err => {
-                console.error('停止掃描失敗:', err);
-            });
-        }
-
-        function onScanSuccess(decodedText, decodedResult) {
-            // 暂停扫描，处理结果
-            if (!isScanning) return;
-
-            // 解析 QR code（格式：CHECKIN:ID）
-            let participantId = null;
-            if (decodedText.startsWith('CHECKIN:')) {
-                participantId = decodedText.substring(8);
-            } else {
-                // 兼容直接扫描 ID 的情况
-                participantId = decodedText;
-            }
-
-            if (!participantId || isNaN(participantId)) {
+            const keyword = searchInput.value.trim();
+            if (!keyword) {
                 Swal.fire({
                     icon: 'warning',
-                    title: '無效的 QR Code',
-                    html: '<div style="font-size: 18px; padding: 20px 0;">請掃描有效的報到 QR Code<br>或至<strong style="color: #667eea;">人工櫃檯</strong>協助</div>',
-                    confirmButtonText: '確定',
-                    confirmButtonColor: '#667eea',
-                    allowOutsideClick: false
-                }).then(() => {
-                    // 重新启动扫描
-                    startScanning();
+                    title: '請輸入查詢關鍵字',
+                    text: '請輸入電話號碼末三碼'
                 });
                 return;
             }
 
-            // 停止扫描
-            stopScanning();
+            // 驗證是否為數字
+            if (!/^\d+$/.test(keyword)) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '格式錯誤',
+                    text: '請輸入有效的數字'
+                });
+                return;
+            }
 
-            // 先获取用户信息，显示确认弹窗
-            getParticipantInfo(participantId);
-        }
-
-        function getParticipantInfo(participantId) {
-            updateStatus('查詢中...', '#ffc107');
+            searchBtn.disabled = true;
+            searchBtn.textContent = '查詢中...';
 
             const formData = new FormData();
-            formData.append('action', 'get_participant');
-            formData.append('participant_id', participantId);
-
-            Swal.fire({
-                title: '查詢中...',
-                text: '正在獲取參加者資料',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
+            formData.append('action', 'search');
+            formData.append('keyword', keyword);
 
             fetch('./search.php', {
                 method: 'POST',
@@ -706,50 +654,63 @@ $checkedInCount = $checkedInResult['checked_in'];
             }))
             .then(data => {
                 if (data.success) {
-                    // 显示确认弹窗
-                    showConfirmDialog(data.data);
-                } else {
-                    // 检查是否为找不到参加者
-                    if (data.message.includes('不存在') || data.message.includes('未找到') || data.message.includes('查無')) {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: '查無報名資料',
-                            html: '<div style="font-size: 18px; padding: 20px 0;">請至<strong style="color: #667eea;">人工櫃檯</strong>協助</div>',
-                            confirmButtonText: '確定',
-                            confirmButtonColor: '#667eea',
-                            allowOutsideClick: false
-                        }).then(() => {
-                            // 重新启动扫描
-                            startScanning();
-                        });
+                    if (data.data.length === 1) {
+                        // 只有一个结果，直接显示
+                        showParticipantDetail(data.data[0]);
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: '查詢失敗',
-                            text: data.message,
-                            confirmButtonColor: '#dc3545'
-                        }).then(() => {
-                            // 重新启动扫描
-                            startScanning();
-                        });
+                        // 多个结果，让用户选择
+                        showParticipantList(data.data);
                     }
+                } else {
+                    Swal.fire({
+                        icon: 'info',
+                        title: '未找到結果',
+                        text: data.message
+                    });
                 }
             })
             .catch(error => {
-                console.error('查詢錯誤:', error);
+                console.error('搜索錯誤:', error);
                 Swal.fire({
                     icon: 'error',
                     title: '查詢失敗',
-                    text: error.message,
-                    confirmButtonColor: '#dc3545'
-                }).then(() => {
-                    // 重新启动扫描
-                    startScanning();
+                    text: error.message
                 });
+            })
+            .finally(() => {
+                searchBtn.disabled = false;
+                searchBtn.textContent = '查詢';
+            });
+        });
+
+        // 显示参加者列表（多个结果）
+        function showParticipantList(participants) {
+            const options = {};
+            participants.forEach(p => {
+                const status = p.checked_in ? '（已報到）' : '';
+                options[p.id] = `${p.name}${status}`;
+            });
+
+            Swal.fire({
+                title: '找到多位參加者',
+                text: '請詢問貴姓後選擇',
+                input: 'select',
+                inputOptions: options,
+                inputPlaceholder: '選擇參加者',
+                showCancelButton: true,
+                cancelButtonText: '取消',
+                confirmButtonText: '選擇此人',
+                confirmButtonColor: '#667eea'
+            }).then((result) => {
+                if (result.isConfirmed && result.value) {
+                    const selectedParticipant = participants.find(p => p.id == result.value);
+                    showParticipantDetail(selectedParticipant);
+                }
             });
         }
 
-        function showConfirmDialog(participant) {
+        // 显示参加者详细信息
+        function showParticipantDetail(participant) {
             const statusText = participant.checked_in ?
                 `<span style="color: #28a745; font-weight: bold;">✓ 已報到</span>` :
                 `<span style="color: #ffc107; font-weight: bold;">未報到</span>`;
@@ -801,9 +762,6 @@ $checkedInCount = $checkedInResult['checked_in'];
                     icon: 'info',
                     confirmButtonText: '確定',
                     confirmButtonColor: '#667eea'
-                }).then(() => {
-                    // 重新启动扫描
-                    startScanning();
                 });
             } else {
                 // 未报到，显示报到按钮
@@ -818,29 +776,14 @@ $checkedInCount = $checkedInResult['checked_in'];
                     cancelButtonColor: '#6c757d'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        performCheckIn(participant.id);
-                    } else {
-                        // 重新启动扫描
-                        startScanning();
+                        performCheckIn(participant.id, participant.name);
                     }
                 });
             }
         }
 
-        function escapeHtml(text) {
-            if (!text) return text;
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function onScanFailure(error) {
-            // 扫描失败（正常情况，不需要处理）
-        }
-
-        function performCheckIn(participantId) {
-            updateStatus('處理中...', '#ffc107');
-
+        // 执行报到
+        function performCheckIn(participantId, participantName) {
             const formData = new FormData();
             formData.append('action', 'checkin');
             formData.append('participant_id', participantId);
@@ -887,9 +830,6 @@ $checkedInCount = $checkedInResult['checked_in'];
                         title: '報到失敗',
                         text: data.message,
                         confirmButtonColor: '#dc3545'
-                    }).then(() => {
-                        // 重新启动扫描
-                        startScanning();
                     });
                 }
             })
@@ -900,25 +840,24 @@ $checkedInCount = $checkedInResult['checked_in'];
                     title: '報到失敗',
                     text: error.message,
                     confirmButtonColor: '#dc3545'
-                }).then(() => {
-                    // 重新启动扫描
-                    startScanning();
                 });
             });
         }
 
-        function updateStatus(message, color) {
-            const statusEl = document.getElementById('scanner-status');
-            statusEl.textContent = message;
-            statusEl.style.color = color;
+        // HTML 转义函数
+        function escapeHtml(text) {
+            if (!text) return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        // 页面加载完成后自动启动扫描
-        window.addEventListener('load', function() {
-            // 延迟启动，确保 DOM 完全加载
-            setTimeout(() => {
-                startScanning();
-            }, 500);
+        // 回车键触发搜索
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                searchForm.dispatchEvent(new Event('submit'));
+            }
         });
     </script>
 </body>

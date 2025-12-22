@@ -382,65 +382,6 @@ $participants = $pdo->query($participantsSql)->fetchAll();
         border: 1px solid #f5c6cb;
     }
 
-    .btn-qr {
-        padding: 8px 16px;
-        font-size: 14px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.3s;
-    }
-
-    .btn-qr:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-    }
-
-    /* QR Code 模态框 */
-    .qr-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 2000;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .qr-modal.active {
-        display: flex;
-    }
-
-    .qr-modal-content {
-        background: white;
-        border-radius: 12px;
-        padding: 30px;
-        max-width: 400px;
-        width: 90%;
-        text-align: center;
-    }
-
-    .qr-modal-header {
-        font-size: 24px;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #333;
-    }
-
-    .qr-code-container {
-        margin: 20px 0;
-        display: flex;
-        justify-content: center;
-    }
-
-    .qr-modal-footer {
-        margin-top: 20px;
-    }
 
     /* RWD - 平板和小屏幕 */
     @media (max-width: 768px) {
@@ -531,13 +472,9 @@ $participants = $pdo->query($participantsSql)->fetchAll();
             font-size: 14px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 10px;
-        }
-
-        .btn-qr {
-            padding: 6px 12px;
-            font-size: 12px;
         }
     }
 
@@ -592,7 +529,8 @@ $participants = $pdo->query($participantsSql)->fetchAll();
             font-size: 12px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 8px;
         }
     }
@@ -659,13 +597,12 @@ $participants = $pdo->query($participantsSql)->fetchAll();
                             <th>備註</th>
                             <th>報到狀態</th>
                             <th>報到時間</th>
-                            <th>QR Code</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php if (empty($participants)): ?>
                         <tr>
-                            <td colspan="9">
+                            <td colspan="8">
                                 <div class="empty-state">
                                     <div class="empty-icon">📋</div>
                                     <div>目前尚無報名資料，請上傳 Excel 名單</div>
@@ -690,11 +627,6 @@ $participants = $pdo->query($participantsSql)->fetchAll();
                             </td>
                             <td>
                                 <?= $participant['check_in_time'] ? date('Y-m-d H:i', strtotime($participant['check_in_time'])) : '-' ?>
-                            </td>
-                            <td>
-                                <button class="btn-qr"
-                                    onclick="showQRCode(<?= $participant['id'] ?>, '<?= htmlspecialchars($participant['name'], ENT_QUOTES) ?>')">顯示
-                                    QR Code</button>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -725,22 +657,6 @@ $participants = $pdo->query($participantsSql)->fetchAll();
             </div>
         </div>
     </div>
-
-    <!-- QR Code 模态框 -->
-    <div id="qrModal" class="qr-modal">
-        <div class="qr-modal-content">
-            <div class="qr-modal-header" id="qrModalTitle">QR Code</div>
-            <div class="qr-code-container">
-                <div id="qrcode"></div>
-            </div>
-            <div class="qr-modal-footer">
-                <button class="btn" onclick="closeQRModal()">關閉</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- QR Code 生成库 -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
     <script>
     // 汉堡菜单功能
@@ -853,42 +769,6 @@ $participants = $pdo->query($participantsSql)->fetchAll();
         container.appendChild(div);
         setTimeout(() => div.remove(), 5000);
     }
-
-    // QR Code 相关函数
-    let currentQRCode = null;
-
-    function showQRCode(participantId, participantName) {
-        // 清除之前的 QR code
-        const qrcodeContainer = document.getElementById('qrcode');
-        qrcodeContainer.innerHTML = '';
-
-        // 设置标题
-        document.getElementById('qrModalTitle').textContent = participantName + ' 的 QR Code';
-
-        // 生成 QR code（格式：CHECKIN:ID）
-        currentQRCode = new QRCode(qrcodeContainer, {
-            text: 'CHECKIN:' + participantId,
-            width: 256,
-            height: 256,
-            colorDark: '#000000',
-            colorLight: '#ffffff',
-            correctLevel: QRCode.CorrectLevel.H
-        });
-
-        // 显示模态框
-        document.getElementById('qrModal').classList.add('active');
-    }
-
-    function closeQRModal() {
-        document.getElementById('qrModal').classList.remove('active');
-    }
-
-    // 点击模态框外部关闭
-    document.getElementById('qrModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closeQRModal();
-        }
-    });
     </script>
 </body>
 
