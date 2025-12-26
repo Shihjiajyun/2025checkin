@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: index.php');
         exit;
     } else {
-        $error = '账号或密码错误';
+        $error = '帳號或密碼錯誤';
     }
 }
 ?>

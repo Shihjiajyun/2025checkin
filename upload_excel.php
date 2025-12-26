@@ -1,7 +1,7 @@
 <?php
-// 禁止任何输出，确保 JSON 格式纯净
-ini_set('display_errors', '0');
-error_reporting(0);
+// 临时开启错误显示以调试500错误
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
 
 session_start();
 require_once 'config.php';
