@@ -1,36 +1,60 @@
 <?php
-// 临时开启错误显示以调试500错误
-ini_set('display_errors', '1');
+// 错误记录到日志文件
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+ini_set('error_log', __DIR__ . '/logs/upload_errors.log');
 error_reporting(E_ALL);
 
+// 辅助日志函数
+function writeLog($message) {
+    $logFile = __DIR__ . '/logs/upload_debug.log';
+    $timestamp = date('Y-m-d H:i:s');
+    file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+}
+
+writeLog("=== 开始处理上传请求 ===");
+
 session_start();
+writeLog("Session started");
+
 require_once 'config.php';
+writeLog("Config loaded");
+
 require_once 'vendor/autoload.php';
+writeLog("Autoload loaded");
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 // 确保输出 JSON 格式
 header('Content-Type: application/json; charset=utf-8');
+writeLog("Header set");
 
 // 檢查登錄和管理員權限
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'admin') {
+    writeLog("权限检查失败");
     http_response_code(403);
     echo json_encode(['success' => false, 'message' => '無權限訪問']);
     exit;
 }
+writeLog("权限检查通过");
 
 // 只處理 POST 請求
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    writeLog("非POST请求: " . $_SERVER['REQUEST_METHOD']);
     http_response_code(405);
     echo json_encode(['success' => false, 'message' => '方法不允許']);
     exit;
 }
+writeLog("请求方法正确");
 
 // 檢查文件上傳
 if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
+    $uploadError = isset($_FILES['excel_file']) ? $_FILES['excel_file']['error'] : 'no file';
+    writeLog("文件上传失败: error=" . $uploadError);
     echo json_encode(['success' => false, 'message' => '文件上傳失敗']);
     exit;
 }
+writeLog("文件上传成功: " . $_FILES['excel_file']['name']);
 
 $file = $_FILES['excel_file'];
 $filename = $file['name'];
@@ -45,10 +69,14 @@ if (!in_array($fileExtension, $allowedExtensions)) {
 }
 
 try {
+    writeLog("开始读取Excel文件: $tmpPath");
     // 讀取 Excel 文件
     $spreadsheet = IOFactory::load($tmpPath);
+    writeLog("IOFactory::load 成功");
     $worksheet = $spreadsheet->getActiveSheet();
+    writeLog("获取活动工作表成功");
     $rows = $worksheet->toArray();
+    writeLog("转换为数组成功，共 " . count($rows) . " 行");
 
     if (empty($rows) || count($rows) < 2) {
         throw new Exception('Excel 文件為空或格式不正確');
@@ -80,12 +108,16 @@ try {
     }
 
     // 資料庫連接
+    writeLog("开始连接数据库");
     $pdo = getDbConnection();
+    writeLog("数据库连接成功");
     $pdo->beginTransaction();
+    writeLog("开始事务");
 
     // 清空舊數據
     // 注意：不重置 AUTO_INCREMENT，因为 ID 不对用户可见，让它自然增长即可
     $pdo->exec("DELETE FROM participants");
+    writeLog("清空旧数据完成");
 
     $totalRows = 0;
     $successRows = 0;
@@ -154,6 +186,7 @@ try {
     ]);
 
     $pdo->commit();
+    writeLog("事务提交成功，总计: $totalRows, 成功: $successRows, 失败: $failedRows");
 
     echo json_encode([
         'success' => true,
@@ -165,13 +198,20 @@ try {
             'errors' => $errors
         ]
     ]);
+    writeLog("=== 处理完成，返回成功响应 ===");
 } catch (Exception $e) {
+    writeLog("捕获异常: " . $e->getMessage());
+    writeLog("异常位置: " . $e->getFile() . ":" . $e->getLine());
+    writeLog("异常堆栈: " . $e->getTraceAsString());
+
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
+        writeLog("事务已回滚");
     }
 
     echo json_encode([
         'success' => false,
         'message' => '導入失敗：' . $e->getMessage()
     ]);
+    writeLog("=== 处理失败，返回错误响应 ===");
 }
