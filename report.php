@@ -704,11 +704,15 @@ $participants = $pdo->query($participantsSql)->fetchAll();
     });
 
     function uploadExcel() {
+        console.log('=== 开始上传Excel ===');
         const fileInput = document.getElementById('excelFile');
         if (!fileInput.files.length) {
+            console.error('未选择文件');
             showMessage('請選擇文件', 'error');
             return;
         }
+
+        console.log('选择的文件:', fileInput.files[0].name, '大小:', fileInput.files[0].size, 'bytes');
 
         const formData = new FormData();
         formData.append('excel_file', fileInput.files[0]);
@@ -717,28 +721,49 @@ $participants = $pdo->query($participantsSql)->fetchAll();
         uploadBtn.disabled = true;
         uploadBtn.textContent = '上傳中...';
 
+        console.log('发送POST请求到 upload_excel.php');
         fetch('upload_excel.php', {
                 method: 'POST',
                 body: formData
             })
             .then(response => {
+                console.log('收到响应，HTTP状态:', response.status, response.statusText);
+                console.log('响应头:', {
+                    'Content-Type': response.headers.get('Content-Type'),
+                    'Content-Length': response.headers.get('Content-Length')
+                });
+
                 // 先获取原始文本，便于调试
                 return response.text().then(text => {
+                    console.log('响应原始内容:', text);
+                    console.log('响应内容长度:', text.length, '字符');
+
                     // 检查 HTTP 状态
                     if (!response.ok) {
+                        console.error('HTTP错误:', response.status);
+                        console.error('错误内容:', text);
                         throw new Error(`服務器錯誤 (${response.status}): ${text}`);
                     }
+
                     // 安全地解析 JSON
                     try {
-                        return JSON.parse(text);
+                        const jsonData = JSON.parse(text);
+                        console.log('JSON解析成功:', jsonData);
+                        return jsonData;
                     } catch (e) {
+                        console.error('JSON解析失败:', e);
                         console.error('無法解析的響應:', text);
                         throw new Error('服務器返回了無效的數據格式，請檢查控制台');
                     }
                 });
             })
             .then(data => {
+                console.log('处理响应数据:', data);
                 if (data.success) {
+                    console.log('上传成功! 总计:', data.data.total, '成功:', data.data.success, '失败:', data.data.failed);
+                    if (data.debug) {
+                        console.log('调试信息:', data.debug);
+                    }
                     let message = `成功導入 ${data.data.success} 條記錄`;
                     if (data.data.failed > 0) {
                         message += `，失敗 ${data.data.failed} 條`;
@@ -747,14 +772,20 @@ $participants = $pdo->query($participantsSql)->fetchAll();
                     closeUploadModal();
                     setTimeout(() => location.reload(), 1500);
                 } else {
+                    console.error('上传失败:', data.message);
+                    if (data.debug) {
+                        console.log('调试信息:', data.debug);
+                    }
                     showMessage(data.message, 'error');
                 }
             })
             .catch(error => {
-                console.error('上傳錯誤:', error);
+                console.error('捕获错误:', error);
+                console.error('错误堆栈:', error.stack);
                 showMessage('上傳失敗：' + error.message, 'error');
             })
             .finally(() => {
+                console.log('=== 上传流程结束 ===');
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = '上傳';
             });

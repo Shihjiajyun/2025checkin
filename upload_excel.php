@@ -5,11 +5,17 @@ ini_set('log_errors', '1');
 ini_set('error_log', __DIR__ . '/logs/upload_errors.log');
 error_reporting(E_ALL);
 
+// 调试信息收集
+$debugMessages = [];
+
 // 辅助日志函数
 function writeLog($message) {
+    global $debugMessages;
     $logFile = __DIR__ . '/logs/upload_debug.log';
     $timestamp = date('Y-m-d H:i:s');
-    file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+    @file_put_contents($logFile, "[$timestamp] $message\n", FILE_APPEND);
+    // 同时收集到数组，用于返回给前端
+    $debugMessages[] = $message;
 }
 
 writeLog("=== 开始处理上传请求 ===");
@@ -33,7 +39,7 @@ writeLog("Header set");
 if (!isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true || $_SESSION['role'] !== 'admin') {
     writeLog("权限检查失败");
     http_response_code(403);
-    echo json_encode(['success' => false, 'message' => '無權限訪問']);
+    echo json_encode(['success' => false, 'message' => '無權限訪問', 'debug' => $debugMessages]);
     exit;
 }
 writeLog("权限检查通过");
@@ -42,7 +48,7 @@ writeLog("权限检查通过");
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     writeLog("非POST请求: " . $_SERVER['REQUEST_METHOD']);
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => '方法不允許']);
+    echo json_encode(['success' => false, 'message' => '方法不允許', 'debug' => $debugMessages]);
     exit;
 }
 writeLog("请求方法正确");
@@ -51,7 +57,7 @@ writeLog("请求方法正确");
 if (!isset($_FILES['excel_file']) || $_FILES['excel_file']['error'] !== UPLOAD_ERR_OK) {
     $uploadError = isset($_FILES['excel_file']) ? $_FILES['excel_file']['error'] : 'no file';
     writeLog("文件上传失败: error=" . $uploadError);
-    echo json_encode(['success' => false, 'message' => '文件上傳失敗']);
+    echo json_encode(['success' => false, 'message' => '文件上傳失敗', 'debug' => $debugMessages]);
     exit;
 }
 writeLog("文件上传成功: " . $_FILES['excel_file']['name']);
@@ -63,10 +69,13 @@ $tmpPath = $file['tmp_name'];
 // 驗證文件類型
 $allowedExtensions = ['xlsx', 'xls'];
 $fileExtension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+writeLog("文件扩展名: $fileExtension");
 if (!in_array($fileExtension, $allowedExtensions)) {
-    echo json_encode(['success' => false, 'message' => '僅支持 .xlsx 和 .xls 格式']);
+    writeLog("文件类型不支持");
+    echo json_encode(['success' => false, 'message' => '僅支持 .xlsx 和 .xls 格式', 'debug' => $debugMessages]);
     exit;
 }
+writeLog("文件类型验证通过");
 
 try {
     writeLog("开始读取Excel文件: $tmpPath");
@@ -196,7 +205,8 @@ try {
             'success' => $successRows,
             'failed' => $failedRows,
             'errors' => $errors
-        ]
+        ],
+        'debug' => $debugMessages
     ]);
     writeLog("=== 处理完成，返回成功响应 ===");
 } catch (Exception $e) {
@@ -211,7 +221,8 @@ try {
 
     echo json_encode([
         'success' => false,
-        'message' => '導入失敗：' . $e->getMessage()
+        'message' => '導入失敗：' . $e->getMessage(),
+        'debug' => $debugMessages
     ]);
     writeLog("=== 处理失败，返回错误响应 ===");
 }
