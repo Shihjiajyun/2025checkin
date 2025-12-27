@@ -120,13 +120,15 @@ try {
     writeLog("开始连接数据库");
     $pdo = getDbConnection();
     writeLog("数据库连接成功");
-    $pdo->beginTransaction();
-    writeLog("开始事务");
 
-    // 清空舊數據
-    // 注意：不重置 AUTO_INCREMENT，因为 ID 不对用户可见，让它自然增长即可
-    $pdo->exec("DELETE FROM participants");
-    writeLog("清空旧数据完成");
+    // 清空舊數據並重置 ID
+    // 注意：TRUNCATE 会隐式提交事务，所以不能放在事务里
+    $pdo->exec("TRUNCATE TABLE participants");
+    writeLog("清空旧数据并重置ID完成");
+
+    // TRUNCATE 完成后再开启事务保护后续的 INSERT 操作
+    $pdo->beginTransaction();
+    writeLog("开始事务（用于INSERT操作）");
 
     $totalRows = 0;
     $successRows = 0;
